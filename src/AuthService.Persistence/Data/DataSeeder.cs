@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using AuthService.Domain.Entities;
+using AuthService.Application.Interfaces;
 using AuthService.Application.Services;
 using AuthService.Domain.Constants;
 using Microsoft.EntityFrameworkCore;
@@ -7,7 +9,7 @@ namespace AuthService.Persistence.Data;
 
 public static class DataSeeder
 {
-    public static async Task SeedAsync(ApplicationDbContext context)
+    public static async Task SeedAsync(ApplicationDbContext context, IPasswordHashService passwordHashService)
     {
         // Verificar si ya existen roles
         if (!context.Roles.Any())
@@ -35,12 +37,11 @@ public static class DataSeeder
             var adminRole = await context.Roles.FirstOrDefaultAsync(r => r.Name == RoleConstants.ADMIN_ROLE);
             if (adminRole != null)
             {
-                //var passwordHasher = new PasswordHashService();
- 
                 var userId = UuidGenerator.GenerateUserId();
                 var profileId = UuidGenerator.GenerateUserId();
                 var emailId = UuidGenerator.GenerateUserId();
                 var userRoleId = UuidGenerator.GenerateUserId();
+                var defaultAdminPassword = "Admin1234!";
  
                 var adminUser = new User
                 {
@@ -49,15 +50,12 @@ public static class DataSeeder
                     Surname = "User",
                     Username = "admin",
                     Email = "admin@ksports.local",
-                    //Password = passwordHasher.HashPassword("Admin1234!"),
-                    Password = "12345678",
+                    Password = passwordHashService.HashPassword(defaultAdminPassword),
                     Status = true,
                     UserProfile = new UserProfile
                     {
                         Id = profileId,
                         UserId = userId,
-                        //ProfilePicture = string.Empty,
-                        //Phone = string.Empty
                     },
                     UserEmail = new UserEmail
                     {
@@ -67,15 +65,15 @@ public static class DataSeeder
                         EmailVerificationToken = null,
                         EmailVerificationTokenExpiry = null
                     },
-                    UserRoles =
-                    [
+                    UserRoles = new List<UserRole>
+                    {
                         new UserRole
                         {
                             Id = userRoleId,
                             UserId = userId,
                             RoleId = adminRole.Id
                         }
-                    ]
+                    }
                 };
  
                 await context.Users.AddAsync(adminUser);

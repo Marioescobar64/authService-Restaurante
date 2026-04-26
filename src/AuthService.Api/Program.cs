@@ -2,6 +2,7 @@ using System.Reflection;
 using AuthService.Api.Extensions;
 using AuthService.Api.Middlewares;
 using AuthService.Api.ModelBinders;
+using AuthService.Application.Interfaces;
 using AuthService.Persistence.Data;
 using NetEscapades.AspNetCore.SecurityHeaders.Infrastructure;
 using Serilog;
@@ -188,6 +189,7 @@ app.Lifetime.ApplicationStarted.Register(() =>
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHashService>();
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
     try
@@ -198,7 +200,7 @@ using (var scope = app.Services.CreateScope())
         await context.Database.EnsureCreatedAsync();
 
         logger.LogInformation("Database ready. Running seed data...");
-        await DataSeeder.SeedAsync(context);
+        await DataSeeder.SeedAsync(context, passwordHasher);
 
         logger.LogInformation("Database initialization completed successfully");
     }
