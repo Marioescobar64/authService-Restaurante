@@ -5,6 +5,8 @@ public class AuthResponseDto
     public bool Success { get; set; } = true;
     public string Message { get; set; } = string.Empty;
     public string Token { get; set; } = string.Empty;
+    public string Role { get; set; } = string.Empty;
+    public IReadOnlyList<string> AccessibleModules { get; set; } = Array.Empty<string>();
     // Compact user details for clients
     public UserDetailsDto UserDetails { get; set; } = new();
     public DateTime ExpiresAt { get; set; }

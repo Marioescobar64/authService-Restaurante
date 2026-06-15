@@ -11,13 +11,13 @@ public class UserManagementService(IUserRepository users, IRoleRepository roles,
     public async Task<UserResponseDto> UpdateUserRoleAsync(string userId, string roleName)
     {
         // Normalizar
-        roleName = roleName?.Trim().ToUpperInvariant() ?? string.Empty;
+        roleName = RoleConstants.NormalizeRoleName(roleName);
  
         // Validar entradas
         if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("Invalid userId", nameof(userId));
  
         if (!RoleConstants.AllowedRoles.Contains(roleName))
-            throw new InvalidOperationException($"Role not allowed. Use {RoleConstants.ADMIN_ROLE} or {RoleConstants.USER_ROLE}");
+            throw new InvalidOperationException($"Role not allowed. Use {string.Join(", ", RoleConstants.AllowedRoles)}");
  
         // Cargar al usuario con roles
         var user = await users.GetByIdAsync(userId)
@@ -71,7 +71,7 @@ public class UserManagementService(IUserRepository users, IRoleRepository roles,
  
     public async Task<IReadOnlyList<UserResponseDto>> GetUsersByRoleAsync(string roleName)
     {
-        roleName = roleName?.Trim().ToUpperInvariant() ?? string.Empty;
+        roleName = RoleConstants.NormalizeRoleName(roleName);
         var usersInRole = await roles.GetUsersByRoleAsync(roleName);
         return usersInRole.Select(u => new UserResponseDto
         {

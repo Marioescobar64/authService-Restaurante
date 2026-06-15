@@ -9,22 +9,28 @@ public static class DataSeeder
 {
     public static async Task SeedAsync(ApplicationDbContext context)
     {
-        // Verificar si ya existen roles
-        if (!context.Roles.Any())
+        var requiredRoles = new[]
         {
-            var roles = new List<Role>
+            RoleConstants.ADMIN_ROLE,
+            RoleConstants.USER_ROLE,
+            RoleConstants.MANAGER_ROLE,
+            RoleConstants.CHEF_ROLE,
+            RoleConstants.WAITER_ROLE
+        };
+
+        var existingRoleNames = await context.Roles.Select(r => r.Name).ToListAsync();
+        var missingRoles = requiredRoles
+            .Where(roleName => !existingRoleNames.Contains(roleName))
+            .Select(roleName => new Role
             {
-                new() {
-                    Id = UuidGenerator.GenerateRoleId(),
-                        Name = RoleConstants.ADMIN_ROLE
-                },
-                new() {
-                    Id = UuidGenerator.GenerateRoleId(),
-                        Name = RoleConstants.USER_ROLE
-                }
-            };
- 
-            await context.Roles.AddRangeAsync(roles);
+                Id = UuidGenerator.GenerateRoleId(),
+                Name = roleName
+            })
+            .ToList();
+
+        if (missingRoles.Count > 0)
+        {
+            await context.Roles.AddRangeAsync(missingRoles);
             await context.SaveChangesAsync();
         }
  

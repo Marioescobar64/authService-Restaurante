@@ -1,4 +1,5 @@
 using AuthService.Application.Interfaces;
+using AuthService.Domain.Constants;
 using AuthService.Domain.Entities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -21,15 +22,16 @@ public class JwtTokenService(IConfiguration configuration) : IJwtTokenService
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-        // Get user's role (assumes single role per user)
-        var role = user.UserRoles?.FirstOrDefault()?.Role?.Name ?? "USER_ROLE";
+        var role = RoleConstants.NormalizeRoleName(user.UserRoles?.FirstOrDefault()?.Role?.Name ?? RoleConstants.USER_ROLE);
+        var modules = string.Join(",", RolePermissions.GetModulesForRole(role));
 
         var claims = new[]
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64),
-            new Claim("role", role)
+            new Claim("role", role),
+            new Claim("modules", modules)
         };
 
         var token = new JwtSecurityToken(

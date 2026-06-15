@@ -2,6 +2,7 @@ using System;
 using AuthService.Application.DTOs;
 using AuthService.Application.DTOs.Email;
 using AuthService.Application.Interfaces;
+using AuthService.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -27,11 +28,17 @@ public class AuthController(IAuthService authService) : ControllerBase
         {
             return NotFound();
         }
+
+        var roleName = RoleConstants.NormalizeRoleName(user.Role);
+        var accessibleModules = RolePermissions.GetModulesForRole(roleName);
+
         return Ok(new
         {
             success = true,
             message = "Perfil obtenido exitosamente",
-            data = user
+            data = user,
+            role = roleName,
+            accessibleModules
         });
     }
 

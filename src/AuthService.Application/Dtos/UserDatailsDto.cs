@@ -6,4 +6,5 @@ public class UserDetailsDto
     public string Username { get; set; } = string.Empty;
     public string ProfilePicture { get; set; } = string.Empty;
     public string Role { get; set; } = string.Empty;
+    public IReadOnlyList<string> AccessibleModules { get; set; } = Array.Empty<string>();
 }

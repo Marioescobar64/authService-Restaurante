@@ -192,19 +192,24 @@ public class AuthService(
         var token = jwtTokenService.GenerateToken(user);
         var expiryMinutes = int.Parse(configuration["JwtSettings:ExpiryInMinutes"] ?? "30");
 
+        var roleName = GetNormalizedRoleName(user);
+        var accessibleModules = RolePermissions.GetModulesForRole(roleName);
+
         // Crear respuesta compacta
         return new AuthResponseDto
         {
             Success = true,
             Message = "Login exitoso",
             Token = token,
+            Role = roleName,
+            AccessibleModules = accessibleModules,
             UserDetails = MapToUserDetailsDto(user),
             ExpiresAt = DateTime.UtcNow.AddMinutes(expiryMinutes)
         };
     }
     private UserResponseDto MapToUserResponseDto(User user)
     {
-        var userRole = user.UserRoles.FirstOrDefault()?.Role?.Name ?? RoleConstants.USER_ROLE;
+        var userRole = GetNormalizedRoleName(user);
         return new UserResponseDto
         {
             Id = user.Id,
@@ -221,15 +226,22 @@ public class AuthService(
             UpdatedAt = user.UpdatedAt
         };
     }
-        private UserDetailsDto MapToUserDetailsDto(User user)
+    private UserDetailsDto MapToUserDetailsDto(User user)
     {
+        var userRole = GetNormalizedRoleName(user);
         return new UserDetailsDto
         {
             Id = user.Id,
             Username = user.Username,
             ProfilePicture = _cloudinaryService.GetFullImageUrl(user.UserProfile?.ProfilePicture ?? string.Empty),
-            Role = user.UserRoles.FirstOrDefault()?.Role?.Name ?? RoleConstants.USER_ROLE
+            Role = userRole,
+            AccessibleModules = RolePermissions.GetModulesForRole(userRole)
         };
+    }
+
+    private string GetNormalizedRoleName(User user)
+    {
+        return RoleConstants.NormalizeRoleName(user.UserRoles.FirstOrDefault()?.Role?.Name ?? RoleConstants.USER_ROLE);
     }
     public async Task<EmailResponseDto> VerifyEmailAsync(VerifyEmailDto verifyEmailDto)
     {
