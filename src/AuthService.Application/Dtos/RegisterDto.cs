@@ -29,4 +29,6 @@ public class RegisterDto
     public string Phone { get; set; } = string.Empty;
 
     public IFileData? ProfilePicture { get; set; }
+
+    public string? Role { get; set; }
 }

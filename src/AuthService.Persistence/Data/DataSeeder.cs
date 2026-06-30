@@ -9,24 +9,20 @@ public static class DataSeeder
 {
     public static async Task SeedAsync(ApplicationDbContext context)
     {
-        // Verificar si ya existen roles
-        if (!context.Roles.Any())
+        // Verificar e insertar roles faltantes
+        foreach (var roleName in RoleConstants.AllowedRoles)
         {
-            var roles = new List<Role>
+            if (!await context.Roles.AnyAsync(r => r.Name == roleName))
             {
-                new() {
+                var role = new Role
+                {
                     Id = UuidGenerator.GenerateRoleId(),
-                        Name = RoleConstants.ADMIN_ROLE
-                },
-                new() {
-                    Id = UuidGenerator.GenerateRoleId(),
-                        Name = RoleConstants.USER_ROLE
-                }
-            };
- 
-            await context.Roles.AddRangeAsync(roles);
-            await context.SaveChangesAsync();
+                    Name = roleName
+                };
+                await context.Roles.AddAsync(role);
+            }
         }
+        await context.SaveChangesAsync();
  
         // Seed de un usuario administrador por defecto SOLO si no existen usuarios todavía
         if (!await context.Users.AnyAsync())

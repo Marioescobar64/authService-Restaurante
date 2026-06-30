@@ -5,6 +5,10 @@ public static class RoleConstants
 {
     public const string ADMIN_ROLE = "ADMIN_ROLE";
     public const string USER_ROLE = "USER_ROLE";
-    public static readonly string[] AllowedRoles = { ADMIN_ROLE, USER_ROLE };
+    public const string CHEF_ROLE = "CHEF_ROLE";
+    public const string MESERO_ROLE = "MESERO_ROLE";
+    public const string GERENTE_ROLE = "GERENTE_ROLE";
+    
+    public static readonly string[] AllowedRoles = { ADMIN_ROLE, USER_ROLE, CHEF_ROLE, MESERO_ROLE, GERENTE_ROLE };
 
 }

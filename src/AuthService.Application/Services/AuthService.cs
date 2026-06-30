@@ -79,11 +79,23 @@ public class AuthService(
         var userEmailId = UuidGenerator.GenerateUserId();
         var userRoleId = UuidGenerator.GenerateUserId();
 
-        // Obtener el rol por defecto (USER_ROLE) ya seedado en DB
-        var defaultRole = await roleRepository.GetByNameAsync(RoleConstants.USER_ROLE);
-        if (defaultRole == null)
+        // Obtener el rol solicitado o el por defecto (USER_ROLE)
+        var roleName = string.IsNullOrEmpty(registerDto.Role) ? RoleConstants.USER_ROLE : registerDto.Role.ToUpper();
+        
+        // No permitir registrar un ADMIN_ROLE directamente
+        if (roleName == RoleConstants.ADMIN_ROLE || !RoleConstants.AllowedRoles.Contains(roleName))
         {
-            throw new InvalidOperationException($"Default role '{RoleConstants.USER_ROLE}' not found. Ensure seeding runs before registration.");
+            roleName = RoleConstants.USER_ROLE;
+        }
+
+        var assignedRole = await roleRepository.GetByNameAsync(roleName);
+        if (assignedRole == null)
+        {
+            assignedRole = await roleRepository.GetByNameAsync(RoleConstants.USER_ROLE);
+            if (assignedRole == null)
+            {
+                throw new InvalidOperationException($"Default role '{RoleConstants.USER_ROLE}' not found. Ensure seeding runs before registration.");
+            }
         }
 
         var user = new User
@@ -116,7 +128,7 @@ public class AuthService(
                 {
                     Id = userRoleId,
                     UserId = userId,
-                    RoleId = defaultRole.Id
+                    RoleId = assignedRole.Id
                 }
             ]
         };
