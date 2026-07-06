@@ -90,6 +90,14 @@ public class AuthController(IAuthService authService) : ControllerBase
         return Ok(result);
     }
 
+    [HttpPost("verify-login")]
+    [EnableRateLimiting("AuthPolicy")]
+    public async Task<ActionResult<AuthResponseDto>> VerifyLogin([FromBody] VerifyLoginDto verifyLoginDto)
+    {
+        var result = await authService.VerifyLoginAsync(verifyLoginDto);
+        return Ok(result);
+    }
+
     [HttpPost("verify-email")]
     [EnableRateLimiting("ApiPolicy")]
     public async Task<ActionResult<EmailResponseDto>> VerifyEmail([FromBody] VerifyEmailDto verifyEmailDto)

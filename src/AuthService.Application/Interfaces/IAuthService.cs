@@ -7,6 +7,7 @@ public interface IAuthService
 {
     Task<RegisterResponseDto> RegisterAsync(RegisterDto registerDto);
     Task<AuthResponseDto> LoginAsync(LoginDto loginDto);
+    Task<AuthResponseDto> VerifyLoginAsync(VerifyLoginDto verifyLoginDto);
     Task<EmailResponseDto> VerifyEmailAsync(VerifyEmailDto verifyEmailDto);
     Task<EmailResponseDto> ResendVerificationEmailAsync(ResendVerificationDto resendDto);
     Task<EmailResponseDto> ForgotPasswordAsync(ForgotPasswordDto forgotPasswordDto);

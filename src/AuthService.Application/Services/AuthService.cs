@@ -11,7 +11,7 @@ using AuthService.Domain.Enums;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using AuthService.Application.DTOs.Email;
-
+using Microsoft.Extensions.Caching.Memory;
 
 namespace AuthService.Application.Services;
 
@@ -23,6 +23,7 @@ public class AuthService(
     ICloudinaryService cloudinaryService,
     IEmailService emailService,
     IConfiguration configuration,
+    IMemoryCache cache,
     ILogger<AuthService> logger) : IAuthService
 {
 
@@ -200,6 +201,38 @@ public class AuthService(
 
         logger.LogUserLoggedIn();
 
+        if (loginDto.Requires2FA)
+        {
+            // Generar código 2FA de 6 dígitos
+            var code = new Random().Next(100000, 999999).ToString();
+            
+            // Guardar en caché con expiración de 5 minutos
+            var cacheKey = $"2fa_{user.Email.ToLowerInvariant()}";
+            cache.Set(cacheKey, code, TimeSpan.FromMinutes(5));
+
+            // Enviar email en background
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await emailService.SendTwoFactorEmailAsync(user.Email, code);
+                    logger.LogInformation("2FA email sent to {Email}", user.Email);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Failed to send 2FA email");
+                }
+            });
+
+            return new AuthResponseDto
+            {
+                Success = true,
+                Message = "Código de verificación enviado al correo",
+                RequiresTwoFactor = true,
+                UserDetails = MapToUserDetailsDto(user)
+            };
+        }
+
         // Generar token JWT
         var token = jwtTokenService.GenerateToken(user);
         var expiryMinutes = int.Parse(configuration["JwtSettings:ExpiryInMinutes"] ?? "30");
@@ -214,6 +247,39 @@ public class AuthService(
             ExpiresAt = DateTime.UtcNow.AddMinutes(expiryMinutes)
         };
     }
+
+    public async Task<AuthResponseDto> VerifyLoginAsync(VerifyLoginDto verifyLoginDto)
+    {
+        var cacheKey = $"2fa_{verifyLoginDto.Email.ToLowerInvariant()}";
+        
+        if (!cache.TryGetValue(cacheKey, out string? storedCode) || storedCode != verifyLoginDto.Code)
+        {
+            throw new UnauthorizedAccessException("Código de verificación inválido o expirado");
+        }
+
+        // Código válido, eliminar del caché
+        cache.Remove(cacheKey);
+
+        var user = await userRepository.GetByEmailAsync(verifyLoginDto.Email.ToLowerInvariant());
+        if (user == null)
+        {
+            throw new UnauthorizedAccessException("Usuario no encontrado");
+        }
+
+        // Generar token JWT
+        var token = jwtTokenService.GenerateToken(user);
+        var expiryMinutes = int.Parse(configuration["JwtSettings:ExpiryInMinutes"] ?? "30");
+
+        return new AuthResponseDto
+        {
+            Success = true,
+            Message = "Login exitoso",
+            Token = token,
+            UserDetails = MapToUserDetailsDto(user),
+            ExpiresAt = DateTime.UtcNow.AddMinutes(expiryMinutes)
+        };
+    }
+
     private UserResponseDto MapToUserResponseDto(User user)
     {
         var userRole = user.UserRoles.FirstOrDefault()?.Role?.Name ?? RoleConstants.USER_ROLE;

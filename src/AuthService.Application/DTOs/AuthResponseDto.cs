@@ -8,4 +8,5 @@ public class AuthResponseDto
     // Compact user details for clients
     public UserDetailsDto UserDetails { get; set; } = new();
     public DateTime ExpiresAt { get; set; }
+    public bool RequiresTwoFactor { get; set; } = false;
 }

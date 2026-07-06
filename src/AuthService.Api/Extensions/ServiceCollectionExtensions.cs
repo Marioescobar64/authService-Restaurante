@@ -29,6 +29,9 @@ public static class ServiceCollectionExtensions
         // Health Checks para monitorear la salud de la aplicación
         services.AddHealthChecks();
 
+        // Memory Cache for 2FA and temporary stores
+        services.AddMemoryCache();
+
         return services;
     }
 

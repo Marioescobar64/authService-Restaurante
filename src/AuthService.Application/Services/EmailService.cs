@@ -82,6 +82,18 @@ public async Task SendWelcomeEmailAsync(string email, string username)
  
     }
  
+public async Task SendTwoFactorEmailAsync(string email, string code)
+    {
+        var subject = "Your Login Verification Code";
+        var body = $@"
+<h2>Login Verification</h2>
+<p>Your verification code is: <strong>{code}</strong></p>
+<p>Please enter this code in the app to complete your login.</p>
+<p>If you didn't request this, please secure your account.</p>
+        ";
+        await SendEmailAsync(email, subject, body);
+    }
+ 
 private async Task SendEmailAsync(string to, string subject, string body)
  
     {

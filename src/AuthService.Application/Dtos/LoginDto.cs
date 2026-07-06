@@ -9,4 +9,6 @@ public class LoginDto
 
     [Required]
     public string Password { get; set; } = string.Empty;
+
+    public bool Requires2FA { get; set; } = false;
 }
