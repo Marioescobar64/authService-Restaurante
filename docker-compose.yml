@@ -30,7 +30,7 @@ services:
 
       - ASPNETCORE_URLS=http://+:8080
 
-      - JwtSettings__SecretKey=clavesecreta123
+      - JwtSettings__SecretKey=clavesecreta1234567890_muysegura
       - JwtSettings__Issuer=AuthService
       - JwtSettings__Audience=AuthService
       - JwtSettings__ExpiryInMinutes=30 

@@ -251,8 +251,13 @@ public class AuthService(
     public async Task<AuthResponseDto> VerifyLoginAsync(VerifyLoginDto verifyLoginDto)
     {
         var cacheKey = $"2fa_{verifyLoginDto.Email.ToLowerInvariant()}";
+        cache.TryGetValue(cacheKey, out string? storedCode);
         
-        if (!cache.TryGetValue(cacheKey, out string? storedCode) || storedCode != verifyLoginDto.Code)
+        Console.WriteLine($"[DEBUG] Intentando verificar 2FA para el cacheKey: '{cacheKey}'");
+        Console.WriteLine($"[DEBUG] Código recibido del celular: '{verifyLoginDto.Code}'");
+        Console.WriteLine($"[DEBUG] Código guardado en memoria: '{storedCode ?? "NULO o EXPIRADO"}'");
+
+        if (storedCode == null || storedCode != verifyLoginDto.Code.ToString())
         {
             throw new UnauthorizedAccessException("Código de verificación inválido o expirado");
         }
@@ -305,6 +310,7 @@ public class AuthService(
         {
             Id = user.Id,
             Username = user.Username,
+            Email = user.Email,
             ProfilePicture = _cloudinaryService.GetFullImageUrl(user.UserProfile?.ProfilePicture ?? string.Empty),
             Role = user.UserRoles.FirstOrDefault()?.Role?.Name ?? RoleConstants.USER_ROLE
         };

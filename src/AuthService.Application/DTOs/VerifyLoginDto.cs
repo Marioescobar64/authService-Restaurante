@@ -9,6 +9,5 @@ public class VerifyLoginDto
     public string Email { get; set; } = string.Empty;
 
     [Required]
-    [StringLength(6, MinimumLength = 6)]
-    public string Code { get; set; } = string.Empty;
+    public int Code { get; set; }
 }
