@@ -9,10 +9,10 @@ using Microsoft.AspNetCore.RateLimiting;
 namespace AuthService.Api.Controllers;
 
 [ApiController]
-[Route("api/v1/[controller]")]
+[Route("api/v1/[controller]")] // Ruta base: /api/v1/auth
 public class AuthController(IAuthService authService) : ControllerBase
 {
-	    [HttpGet("profile")]
+    [HttpGet("profile")]
     [Authorize]
     public async Task<ActionResult<object>> GetProfile()
     {
@@ -66,13 +66,12 @@ public class AuthController(IAuthService authService) : ControllerBase
         });
     }
 
-// <summary>
-// 
-// </summary>
-// <param name="Name"> Nombre del usuario </param>
-// <returns></return>
-
-    [HttpPost("register")]
+    // <summary>
+    // 
+    // </summary>
+    // <param name="Name"> Nombre del usuario </param>
+    // <returns></returns>
+    [HttpPost("register")] // Endpoint específico: POST /api/v1/auth/register
     [RequestSizeLimit(10 * 1024 * 1024)] // 10MB límite
     [EnableRateLimiting("AuthPolicy")]
     public async Task<ActionResult<RegisterResponseDto>> Register([FromForm] RegisterDto registerDto)
@@ -106,13 +105,32 @@ public class AuthController(IAuthService authService) : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("verify-email")]
+    [EnableRateLimiting("ApiPolicy")]
+    public async Task<IActionResult> VerifyEmailHtml([FromQuery] string token)
+    {
+        if (string.IsNullOrEmpty(token))
+        {
+            return Content("<html><head><meta charset=\"UTF-8\"></head><body style='font-family: sans-serif; text-align: center; padding-top: 50px; color: red;'><h2>Error: Token no proporcionado o inválido.</h2></body></html>", "text/html");
+        }
+
+        var verifyEmailDto = new VerifyEmailDto { Token = token };
+        var result = await authService.VerifyEmailAsync(verifyEmailDto);
+
+        if (result.Success)
+        {
+            return Content("<html><head><meta charset=\"UTF-8\"></head><body style='font-family: sans-serif; text-align: center; padding-top: 50px;'><h2>¡Correo verificado con éxito!</h2><p>Ya puedes cerrar esta página y volver a la aplicación.</p></body></html>", "text/html");
+        }
+        
+        return Content($"<html><head><meta charset=\"UTF-8\"></head><body style='font-family: sans-serif; text-align: center; padding-top: 50px; color: red;'><h2>Error al verificar el correo</h2><p>{result.Message}</p></body></html>", "text/html");
+    }
+
     [HttpPost("resend-verification")]
     [EnableRateLimiting("AuthPolicy")]
     public async Task<ActionResult<EmailResponseDto>> ResendVerification([FromBody] ResendVerificationDto resendDto)
     {
         var result = await authService.ResendVerificationEmailAsync(resendDto);
 
-        // Return appropriate status code based on result
         if (!result.Success)
         {
             if (result.Message.Contains("no encontrado", StringComparison.OrdinalIgnoreCase))
@@ -124,7 +142,6 @@ public class AuthController(IAuthService authService) : ControllerBase
             {
                 return BadRequest(result);
             }
-            // Email sending failed - Service Unavailable
             return StatusCode(503, result);
         }
 
@@ -137,8 +154,6 @@ public class AuthController(IAuthService authService) : ControllerBase
     {
         var result = await authService.ForgotPasswordAsync(forgotPasswordDto);
 
-        // ForgotPassword always returns success for security (even if user not found)
-        // But if email sending fails, return 503
         if (!result.Success)
         {
             return StatusCode(503, result);

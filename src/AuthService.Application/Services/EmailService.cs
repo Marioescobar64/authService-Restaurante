@@ -16,7 +16,8 @@ public class EmailService(IConfiguration configuration, ILogger<EmailService> lo
  
         var subject = "Verify your email address";
  
-        var verificationUrl = $"{configuration["AppSettings:FrontendUrl"]}/verify-email?token={token}";
+        var baseUrl = configuration["AppSettings:BackendUrl"] ?? "http://192.168.0.20:5277";
+        var verificationUrl = $"{baseUrl}/api/v1/auth/verify-email?token={token}";
  
         var body = $@"
 <h2>Welcome {username}!</h2>
